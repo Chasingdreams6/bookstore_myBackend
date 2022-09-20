@@ -10,6 +10,7 @@ import java.util.List;
 public interface UserService {
     public Result<User> register(User user);
     public Result<User> login(User user);
+    public Result<String> logout(User user);
     public Result<User> update(User user);
     public Result<List<User>> getUsers();
     public Result<User> mostCostUser();

@@ -18,6 +18,13 @@ public class Result<T>{
     private T detail;
 
 
+    public Result() {}
+
+    public Result(int code, String msg, T detail) {
+        this.msg = msg;
+        this.code = code;
+        this.detail = detail;
+    }
     public String getMsg() {
         return msg;
     }

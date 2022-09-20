@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +55,7 @@ public class OrderDaoImpl implements OrderDao {
         return order;
     }
 
-
+    //@Transactional(propagation = Propagation.REQUIRED)  // 作为一个
     public Integer buyBookByISBN(String isbn, Integer userid, Integer number) { // 某人确定购买某本书
         Book goal = bookDao.findBookByISBN(isbn); // find this book
         //System.out.println(goal.toString());
@@ -82,19 +84,19 @@ public class OrderDaoImpl implements OrderDao {
         session.save(order);
         // delete number
         goal.setBookremain(goal.getBookremain() - number);
-        session.update(goal);
+        session.update(goal);   // 更新总量
         // delete from cart
-        session.delete(item);
+        session.delete(item);   // 从购物车中删除
         // add to Order
-        OrderItem newItem = new OrderItem();
+        OrderItem newItem = new OrderItem();        // 新建orderItem
         newItem.setBookisbn(item.getBookisbn());
         newItem.setCurprice(goal.getBookprice());
         newItem.setBooknumber(number);
         newItem.setOrder(order);
-        order.getOrderItems().add(newItem);
+        order.getOrderItems().add(newItem); // 绑定order与orderItem
 
-        session.saveOrUpdate(order);
-        session.save(newItem);
+        session.saveOrUpdate(order); // 保存order
+        session.save(newItem); // 保存orderItem
         session.getTransaction().commit();
         return Constants.SUCCESS;
     }

@@ -1,14 +1,19 @@
 package com.example.mybackend.controller;
 
+import com.example.mybackend.service.TimerService;
+import com.example.mybackend.serviceimpl.TimerServiceImpl;
 import com.example.mybackend.utility.Constants;
 import com.example.mybackend.entity.MostCostUser;
 import com.example.mybackend.entity.Result;
 import com.example.mybackend.entity.User;
 import com.example.mybackend.service.UserService;
+import org.hibernate.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -21,6 +26,11 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+//    @Autowired
+//    private  TimerServiceImpl timerService;
+    @Autowired
+    private WebApplicationContext webApplicationContext;
 
     @RequestMapping(value = "/getUsers", produces="application/json;charset=UTF-8")
     public Result<List<User>> getUsers() {return userService.getUsers();}
@@ -64,7 +74,35 @@ public class UserController {
                 0
         );
         //logger.info("login.. user:" + user.toString());
-        return userService.login(user);
+        Result<User> result = userService.login(user);
+        if (result.getCode() == Constants.SUCCESS) {
+            TimerService timerService = webApplicationContext.getBean(TimerService.class);
+            timerService.initTimer();
+            System.out.println("init timer" + timerService);
+            System.out.println(this);
+        }
+        return result;
+    }
+
+    @PostMapping(value = "/logout")
+    public Result<String> logout(@RequestBody Map<String, String> params)
+            throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        String id = params.get(Constants.USERID);
+        User user = new User(
+                id == null ? null :Integer.parseInt(id),
+                params.get(Constants.USERNAME),
+                params.get(Constants.PASSWORD),
+                params.get(Constants.GENDER),
+                params.get(Constants.MAIL),
+                params.get(Constants.ADDRESS),
+                params.get(Constants.PHONE),
+                0
+        );
+        //logger.info("login.. user:" + user.toString());
+        TimerService timerService = webApplicationContext.getBean(TimerService.class);
+        System.out.println(timerService);
+        System.out.println(this);
+        return timerService.getTime();
     }
 
    // @CrossOrigin

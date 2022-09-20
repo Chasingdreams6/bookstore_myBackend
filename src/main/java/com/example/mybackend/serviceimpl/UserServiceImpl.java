@@ -10,8 +10,10 @@ import com.example.mybackend.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
 
@@ -20,6 +22,10 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
     @Autowired
     UserDao userDao; //
+
+    @Autowired
+    private WebApplicationContext webApplicationContext;
+
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private Result<User> mResult = new Result<>();
     private Result<List<User>> result = new Result<>();
@@ -90,6 +96,15 @@ public class UserServiceImpl implements UserService {
         if (selectUser == null) logger.info("search result is empty!");
         else logger.info("search result: " + selectUser.toString());
         return mResult;
+    }
+
+    public Result<String> logout(User user) {
+        User selectUser = userDao.SearchByName(user.getUsername());
+        if (selectUser != null) {
+            TimerServiceImpl timerService = webApplicationContext.getBean(TimerServiceImpl.class);
+            return timerService.getTime();
+        }
+        return new Result<>(Constants.FAIL, "username not found", "");
     }
 
     public Result<User> update(User user) {
