@@ -5,6 +5,7 @@ import com.example.mybackend.dao.CartDao;
 import com.example.mybackend.dao.OrderDao;
 import com.example.mybackend.dao.UserDao;
 import com.example.mybackend.entity.*;
+import com.example.mybackend.repository.CartRepository;
 import com.example.mybackend.utility.Constants;
 import com.example.mybackend.utility.HibernateUtil;
 import org.hibernate.Session;
@@ -24,6 +25,9 @@ public class CartDaoImpl implements CartDao {
     BookDao bookDao;
     @Autowired
     UserDao userDao;
+    @Autowired
+    CartRepository cartRepository;
+
     private static final Logger logger = LoggerFactory.getLogger(OrderDao.class);
 
     public Integer getCartID(Integer userid) { // 获取一个人的CartID
@@ -47,6 +51,13 @@ public class CartDaoImpl implements CartDao {
         if (carts.isEmpty()) return null;
         return carts.get(0);
     }
+
+    @Override
+    public void saveCart(Cart cart) {
+        cartRepository.saveAndFlush(cart);
+    }
+
+
     public Cart createCart(Integer userid) {
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         User user = userDao.SearchByID(userid);

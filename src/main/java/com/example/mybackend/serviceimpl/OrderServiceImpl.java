@@ -1,24 +1,37 @@
 package com.example.mybackend.serviceimpl;
 
 
-import com.example.mybackend.dao.CartDao;
-import com.example.mybackend.dao.OrderDao;
+import com.example.mybackend.dao.*;
 import com.example.mybackend.entity.*;
 import com.example.mybackend.service.OrderService;
 import com.example.mybackend.utility.Constants;
+import com.example.mybackend.utility.HibernateUtil;
+import org.hibernate.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class OrderServiceImpl implements OrderService {
     @Autowired
     private OrderDao orderDao;
     @Autowired
+    private OrderItemDao orderItemDao;
+    @Autowired
+    private CartItemDao cartItemDao;
+    @Autowired
     private CartDao cartDao;
+    @Autowired
+    private BookDao bookDao;
+    @Autowired
+    private UserDao userDao;
+
     private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
     private Result<Cart> result = new Result<>();
     private Result<CartItem> cartResult = new Result<>();
@@ -81,25 +94,122 @@ public class OrderServiceImpl implements OrderService {
         else cartResult.setMsg("Fail to Cancel");
         return cartResult;
     }
+    @Transactional(propagation = Propagation.REQUIRED)
     public Result<Cart> buyBooks(Integer userid) {
         restart();
-        result.setCode(orderDao.buyBooks(userid));
-        if (result.getCode() == Constants.SUCCESS) {
+        User user = userDao.SearchByID(userid);
+        Cart cart = user.getCart();
+        //   读取购物车中的所有书
+        Set<CartItem> items = cart.getCartItems();
+        if (items.isEmpty()) { // 无书
+            result.setCode(Constants.FAIL);
+            result.setMsg("Fail to buy any books");
+            return result;
+        }
+
+        Order order = new Order();
+        order.setUser(user);
+        order.setDate(new java.sql.Date(new java.util.Date().getTime()));
+        user.getOrders().add(order);
+
+        orderDao.saveOrder(order); // 先持久化order
+
+        AtomicReference<Boolean> allBuy = new AtomicReference<>(true);
+
+
+        items.forEach(item->{
+            Book curBook = bookDao.findBookByISBN(item.getBookisbn());
+            Integer last = curBook.getBookremain();
+            Integer number = item.getBooknumber();
+
+            if (last >= number) {
+                OrderItem newItem = new OrderItem();
+                newItem.setCurprice(curBook.getBookprice());
+                newItem.setBooknumber(number);
+                newItem.setBookisbn(curBook.getId());
+                curBook.setBookremain(last - number);
+                bookDao.updateBook(curBook); // 更新book
+                cartItemDao.deleteCartItem(item);  // delete from Cart
+                // add new orderItems
+                newItem.setOrder(order);
+                order.getOrderItems().add(newItem);
+                orderItemDao.saveOrderItem(newItem);
+            }
+            else allBuy.set(false);
+        });
+
+        orderDao.saveOrder(order);
+        //session.saveOrUpdate(order);
+        if (allBuy.get()) {
+            result.setCode(Constants.SUCCESS);
             result.setMsg("Success to Buy all Books");
         }
-        else if (result.getCode() == Constants.PARTIAL) {
+        else {
             result.setMsg("Success to buy partial books");
+            result.setCode(Constants.PARTIAL);
         }
-        else result.setMsg("Fail to buy any books");
         return result;
     }
+
+    @Transactional(propagation = Propagation.REQUIRED)
     public Result<OrderItem> buyBookByISBN(String isbn, Integer userid, Integer number) {
         mRestart();
-        mResult.setCode(orderDao.buyBookByISBN(isbn, userid, number));
-        if (mResult.getCode() == Constants.SUCCESS) {
-            mResult.setMsg("Success to buy this book");
+        Book goal = bookDao.findBookByISBN(isbn); // find this book
+        Integer last = goal.getBookremain();
+        User user = userDao.SearchByID(userid);
+        if (last < number) { // can't buy this book
+            mResult.setCode(Constants.FAIL);
+            mResult.setMsg("fail to buy this book");
+            return mResult;
         }
-        else mResult.setMsg("fail to buy this book");
+        Cart cart = user.getCart();
+        Set<CartItem> items = cart.getCartItems();
+        CartItem item = new CartItem();
+        Boolean flag = false;
+        for (CartItem it : items) {
+            if (it.getBookisbn().equals(isbn)) {
+                item = it;
+                flag = true;
+            }
+        }
+        if (flag.equals(false)) {
+            // 购物车中没有这本书
+            mResult.setCode(Constants.FAIL);
+            mResult.setMsg("fail to buy this book");
+            return mResult;
+        }
+//        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+//        session.beginTransaction();
+        Order order = new Order();
+        order.setUser(user);
+        order.setDate(new java.sql.Date(new java.util.Date().getTime()));
+
+        // delete number
+        goal.setBookremain(goal.getBookremain() - number);
+        bookDao.updateBook(goal);  // 持久化总量
+        // delete from cart
+        cartItemDao.deleteCartItem(item); // 删除cartItem
+
+        // add to Order
+        OrderItem newItem = new OrderItem();        // 新建orderItem
+        newItem.setBookisbn(item.getBookisbn());
+        newItem.setCurprice(goal.getBookprice());
+        newItem.setBooknumber(number);
+        newItem.setOrder(order);
+        order.getOrderItems().add(newItem); // 绑定order与orderItem
+        user.getOrders().add(order);
+
+        orderDao.saveOrder(order); // 持久化order，要在orderItem之前
+
+        try {
+            orderItemDao.saveOrderItem(newItem); // 持久化新orderItem
+        }
+        catch (ArithmeticException e) {
+            System.out.println("handle / by zero");
+        }
+
+        mResult.setCode(Constants.SUCCESS);
+        mResult.setMsg("Success to buy this book");
         return mResult;
     }
     public Result<List<CartItem>> getCarts(Integer userid) {
@@ -128,12 +238,13 @@ public class OrderServiceImpl implements OrderService {
             cResult.setMsg("Please login!");
             return cResult;
         }
-        List<Order> res = orderDao.getOrders(userid);
+        User user = userDao.SearchByID(userid);
+        Set<Order> orders = user.getOrders();
+        List<Order> res = new ArrayList<>(orders);
         if (res == null) {
             cResult.setCode(Constants.FAIL);
             cResult.setMsg("Empty Orders!");
-        }
-        else {
+        } else {
             cResult.setCode(Constants.SUCCESS);
             cResult.setMsg("Success to get Orders");
             cResult.setDetail(res);
@@ -148,7 +259,14 @@ public class OrderServiceImpl implements OrderService {
             cResult.setMsg("Please login!");
             return cResult;
         }
-        List<Order> res = orderDao.getOrdersByTime(userid, start, end);
+        User user = userDao.SearchByID(userid);
+        Set<Order> orders = user.getOrders();
+        List<Order> res = new ArrayList<>();
+        for (Order order : orders) {
+            if (order.getDate().toString().compareTo(start) >= 0 &&
+                    order.getDate().toString().compareTo(end) <= 0)
+                res.add(order);
+        }
         if (res == null) {
             cResult.setCode(Constants.FAIL);
             cResult.setMsg("Empty Orders!");
