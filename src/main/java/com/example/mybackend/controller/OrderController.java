@@ -3,9 +3,12 @@ package com.example.mybackend.controller;
 import com.example.mybackend.entity.*;
 import com.example.mybackend.service.OrderService;
 import com.example.mybackend.utility.Constants;
+import com.example.mybackend.utility.OrderItemSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +16,12 @@ import java.util.Map;
 public class OrderController {
     @Autowired
     private OrderService cartService;
+
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
+
+    @Autowired
+    HttpServletRequest request;
 
     @RequestMapping("createCart")
     public Result<Cart> createCart(@RequestParam(Constants.USERID) Integer userid) {
@@ -44,11 +53,15 @@ public class OrderController {
     }
 
     @RequestMapping("/buyBook")
-    public Result<OrderItem> buyOne(@RequestBody Map<String, String> params) {
-        return cartService.buyBookByISBN(
-                params.get(Constants.ISBN),
-                Integer.parseInt(params.get(Constants.USERID)),
-                Integer.parseInt(params.get(Constants.NUMBER)));
+    public void buyOne(@RequestBody Map<String, String> params) {
+        String message = (String) params.get(Constants.ISBN) + ","
+                + (String) params.get(Constants.USERID) + ","
+                + (String) params.get(Constants.NUMBER);
+        kafkaTemplate.send("buyTopic", "key", message);
+//        return cartService.buyBookByISBN(
+//                params.get(Constants.ISBN),
+//                Integer.parseInt(params.get(Constants.USERID)),
+//                Integer.parseInt(params.get(Constants.NUMBER)));
     }
 
     @RequestMapping("/getCarts")

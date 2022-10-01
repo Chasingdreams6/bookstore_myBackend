@@ -78,8 +78,8 @@ public class UserController {
         if (result.getCode() == Constants.SUCCESS) {
             TimerService timerService = webApplicationContext.getBean(TimerService.class);
             timerService.initTimer();
-            System.out.println("init timer" + timerService);
-            System.out.println(this);
+            //System.out.println("init timer" + timerService);
+            //System.out.println(this);
         }
         return result;
     }
