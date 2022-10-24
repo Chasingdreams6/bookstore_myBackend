@@ -100,8 +100,8 @@ public class UserController {
         );
         //logger.info("login.. user:" + user.toString());
         TimerService timerService = webApplicationContext.getBean(TimerService.class);
-        System.out.println(timerService);
-        System.out.println(this);
+        //System.out.println(timerService);
+        //System.out.println(this);
         return timerService.getTime();
     }
 

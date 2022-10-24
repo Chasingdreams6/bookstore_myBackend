@@ -22,21 +22,18 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @ServerEndpoint(value = "/orderWs/{userId}", encoders = {OrderItemEncoder.class})
 public class OrderEndpoint {
 
-    private Session session;
-    private Integer userid;
-
-    private static CopyOnWriteArraySet<OrderEndpoint> webSockets =new CopyOnWriteArraySet<>();
     private static ConcurrentHashMap<Integer,Session> sessionPool = new ConcurrentHashMap<Integer,Session>();
 
     @OnOpen
     public void onOpen(final Session session, @PathParam(value = "userId")Integer userid) {
         System.out.println("got connection userid=" + userid);
-        this.session = session;
-        this.userid = userid;
-        webSockets.add(this);
         sessionPool.put(userid, session);
     }
-
+    @OnClose
+    public void onClose(@PathParam(value = "userId") Integer userid) {
+        System.out.println("lost connection userid=" + userid);
+        sessionPool.remove(userid);
+    }
     @OnError
     public void errorhandler(Session session, Throwable error) {
         System.out.println("error:" + error.getMessage());

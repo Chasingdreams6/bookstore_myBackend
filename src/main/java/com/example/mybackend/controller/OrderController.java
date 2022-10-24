@@ -48,8 +48,8 @@ public class OrderController {
     * @effect: buy all books in his cart
     * */
     @RequestMapping("/buyBooks")
-    public Result<Cart> doBuy(@RequestBody Map<String, String> params) {
-        return cartService.buyBooks(Integer.parseInt(params.get(Constants.USERID)));
+    public void doBuy(@RequestBody Map<String, String> params) {
+        kafkaTemplate.send("buyAllTopic", "key", params.get(Constants.USERID));
     }
 
     @RequestMapping("/buyBook")
@@ -58,10 +58,6 @@ public class OrderController {
                 + (String) params.get(Constants.USERID) + ","
                 + (String) params.get(Constants.NUMBER);
         kafkaTemplate.send("buyTopic", "key", message);
-//        return cartService.buyBookByISBN(
-//                params.get(Constants.ISBN),
-//                Integer.parseInt(params.get(Constants.USERID)),
-//                Integer.parseInt(params.get(Constants.NUMBER)));
     }
 
     @RequestMapping("/getCarts")

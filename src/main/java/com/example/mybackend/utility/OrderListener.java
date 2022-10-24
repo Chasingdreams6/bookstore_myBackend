@@ -1,5 +1,6 @@
 package com.example.mybackend.utility;
 
+import com.example.mybackend.entity.Cart;
 import com.example.mybackend.entity.OrderItem;
 import com.example.mybackend.entity.Result;
 import com.example.mybackend.service.OrderService;
@@ -35,9 +36,23 @@ public class OrderListener {
         kafkaTemplate.send("buyResultTopic", "key", data);
     }
 
+    @KafkaListener(topics = "buyAllTopic", groupId = "group_buy_all")
+    public void buyAllListener(ConsumerRecord<String, String> record) {
+        String userid = record.value();
+        Result<Cart> res = orderService.buyBooks(Integer.parseInt(userid));
+        String data = res.getCode() + "," + userid + "," + res.getMsg();
+        kafkaTemplate.send("buyResultTopic", "key", data);
+    }
+
     @KafkaListener(topics = "buyResultTopic", groupId = "group_buy_result")
     public void buyResultListener(ConsumerRecord<String, String> record) throws EncodeException, IOException {
         String[] value = record.value().split(",");
-        orderEndpoint.sendBuyOne(new OrderItemSession(Integer.parseInt(value[0]), value[2], value[1]));
+        try {
+            orderEndpoint.sendBuyOne(new OrderItemSession(Integer.parseInt(value[0]), value[2], value[1]));
+        } catch (EncodeException e) {
+            System.out.println("fatal: encode exception");
+        } catch (IOException e) {
+            System.out.println("fatal: io exception");
+        }
     }
 }
