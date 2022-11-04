@@ -18,7 +18,6 @@ public class OrderItemDaoImpl implements OrderItemDao {
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
     public void saveOrderItem(OrderItem orderItem) {
-        //int x = 1 / 0;
         orderItemRepository.saveAndFlush(orderItem);
     }
 

@@ -8,6 +8,7 @@ import com.example.mybackend.entity.*;
 import com.example.mybackend.repository.CartRepository;
 import com.example.mybackend.utility.Constants;
 import com.example.mybackend.utility.HibernateUtil;
+import com.example.mybackend.utility.RedisUtil;
 import org.hibernate.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Repository
@@ -28,8 +30,6 @@ public class CartDaoImpl implements CartDao {
     @Autowired
     CartRepository cartRepository;
 
-    private static final Logger logger = LoggerFactory.getLogger(OrderDao.class);
-
     public Integer getCartID(Integer userid) { // 获取一个人的CartID
         User user = userDao.SearchByID(userid);
         Cart cart = user.getCart();
@@ -37,19 +37,9 @@ public class CartDaoImpl implements CartDao {
     }
 
     public Cart findCartByCartID(Integer cartid) {
-        logger.info("try to find a order...");
-        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
-        List<Cart> carts;
-        try {
-            carts = session.createQuery("from Cart where id=:orderid")
-                    .setParameter("orderid",cartid).list();
-        } catch (EmptyResultDataAccessException e) {
-            session.close();
-            return null;
-        }
-        session.close();
-        if (carts.isEmpty()) return null;
-        return carts.get(0);
+        Optional<Cart>  tmp = cartRepository.findById(cartid);
+        if (tmp.isEmpty()) return null;
+        return tmp.get();
     }
 
     @Override
@@ -70,7 +60,7 @@ public class CartDaoImpl implements CartDao {
         return cart;
     }
     public CartItem findCartItemByISBN(String isbn, Integer userid) { // 查询某个人购物车中某本书
-        logger.info("查询某个人购物车中某本书...");
+        //logger.info("查询某个人购物车中某本书...");
         User user = userDao.SearchByID(userid);
         Cart cart = user.getCart();
         Set<CartItem> items = cart.getCartItems();
