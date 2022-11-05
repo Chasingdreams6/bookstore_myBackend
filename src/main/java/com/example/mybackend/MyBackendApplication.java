@@ -1,6 +1,7 @@
 package com.example.mybackend;
 
 import com.example.mybackend.utility.OrderEndpoint;
+import com.example.mybackend.utility.Solr;
 import org.apache.catalina.Context;
 import org.apache.catalina.connector.Connector;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;

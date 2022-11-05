@@ -1,12 +1,16 @@
 package com.example.mybackend.controller;
 
 import com.example.mybackend.entity.Book;
+import com.example.mybackend.utility.BookForSolr;
 import com.example.mybackend.utility.Constants;
 import com.example.mybackend.entity.Result;
 import com.example.mybackend.service.BookService;
+import com.example.mybackend.utility.Solr;
+import org.apache.solr.client.solrj.SolrServerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +19,19 @@ public class BookController {
 
     @Autowired
     private BookService bookService;
+    @Autowired
+    private Solr solr;
+
+    @RequestMapping(value = "/initSolr")
+    public void initSolr() throws SolrServerException, IOException {
+        solr.initSolr();
+    }
+
+    @RequestMapping(value = "/fulltextSearch")
+    public Result<List<BookForSolr>> search(@RequestParam("info") String s)
+            throws SolrServerException, IOException {
+        return solr.search(s);
+    }
 
     @RequestMapping(value = "/getBooks" , produces="application/json;charset=UTF-8")
     public Result<List<Book>> getBooks() {return bookService.getBooks();}

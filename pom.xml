@@ -44,22 +44,13 @@
             <version>2.9.0</version>
         </dependency>
 
-<!--        &lt;!&ndash; 关于spring security&ndash;&gt;-->
-<!--        &lt;!&ndash; https://mvnrepository.com/artifact/com.google.guava/guava &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>com.google.guava</groupId>-->
-<!--            <artifactId>guava</artifactId>-->
-<!--            <version>28.2-jre</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.security</groupId>-->
-<!--            <artifactId>spring-security-test</artifactId>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.boot</groupId>-->
-<!--            <artifactId>spring-boot-starter-security</artifactId>-->
-<!--        </dependency>-->
+        <!-- 引入 solr 依赖，使用8.11.2版本 -->
+        <!-- https://mvnrepository.com/artifact/org.apache.solr/solr-solrj -->
+        <dependency>
+            <groupId>org.apache.solr</groupId>
+            <artifactId>solr-solrj</artifactId>
+            <version>8.11.2</version>
+        </dependency>
 
         <!-- 引入redis依赖 -->
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-redis -->

@@ -37,8 +37,8 @@ public class UserDaoImpl implements UserDao {
     public int insert(User user) {
         Session session = HibernateUtil.getSessionFactory().openSession();
         session.beginTransaction();
-        System.out.println("insert: clean all users in redis");
-        redisUtil.del(allUsersKey);
+//        System.out.println("insert: clean all users in redis");
+//        redisUtil.del(allUsersKey);
         int res = (int) session.save(user);
         session.getTransaction().commit();
         session.close();
@@ -47,75 +47,79 @@ public class UserDaoImpl implements UserDao {
 
     // delete a user
     public void deleteByID(int userid) {
-        String id_key = "UserDao_user_id_" + userid;
-        System.out.println("deleteByID: clean redis");
-        redisUtil.del(id_key);
-        redisUtil.del(allUsersKey);
+//        String id_key = "UserDao_user_id_" + userid;
+//        System.out.println("deleteByID: clean redis");
+//        redisUtil.del(id_key);
+//        redisUtil.del(allUsersKey);
         userRepository.deleteById(userid);
     }
 
     // update a user, assume userid not change
     public Integer update(User user) {
-        User oldUser = SearchByID(user.getId());
-        String name_key = "UserDao_user_name_" + oldUser.getUsername();
-        String id_key = "UserDao_user_id_" + oldUser.getId();
-        System.out.println("update: clean redis");
-        redisUtil.del(name_key);
-        redisUtil.del(id_key);
-        redisUtil.del(allUsersKey);
-        System.out.println("update: update redis");
-        name_key = "UserDao_user_name_" + user.getUsername();
-        id_key = "UserDao_user_id_" + user.getId();
-        redisUtil.set(name_key, JSONArray.toJSON(user));
-        redisUtil.set(id_key, JSONArray.toJSON(user));
+//        User oldUser = SearchByID(user.getId());
+//        String name_key = "UserDao_user_name_" + oldUser.getUsername();
+//        String id_key = "UserDao_user_id_" + oldUser.getId();
+//        System.out.println("update: clean redis");
+//        redisUtil.del(name_key);
+//        redisUtil.del(id_key);
+//        redisUtil.del(allUsersKey);
+//        System.out.println("update: update redis");
+//        name_key = "UserDao_user_name_" + user.getUsername();
+//        id_key = "UserDao_user_id_" + user.getId();
+//        redisUtil.set(name_key, JSONArray.toJSON(user));
+//        redisUtil.set(id_key, JSONArray.toJSON(user));
         userRepository.saveAndFlush(user);
         return Constants.SUCCESS;
     }
 
+    //TODO the marshall and unmarshall for user may have problem
     public User SearchByName(String name) {
-        String key = "UserDao_user_name_" + name;
-        Object cache = redisUtil.get(key);
-        User res;
-        if (cache == null) {
-            System.out.println("getUserByName: not in redis " + "name: " + name);
-            res = userRepository.findUserByUsername(name);
-            if (res != null)
-                redisUtil.set(key, JSONArray.toJSON(res));
-        } else {
-            System.out.println("getUserByName: in redis " + "name: " + name);
-            res = JSONArray.parseObject(cache.toString(), User.class);
-        }
+//        String key = "UserDao_user_name_" + name;
+//        Object cache = redisUtil.get(key);
+//        User res;
+//        if (cache == null) {
+//            System.out.println("getUserByName: not in redis " + "name: " + name);
+//            res = userRepository.findUserByUsername(name);
+//            if (res != null)
+//                redisUtil.set(key, JSONArray.toJSON(res));
+//        } else {
+//            System.out.println("getUserByName: in redis " + "name: " + name);
+//            res = JSONArray.parseObject(cache.toString(), User.class);
+//        }
+        User res = userRepository.findUserByUsername(name);
         return res;
     }
 
     public User SearchByID(Integer id) {
-        String key = "UserDao_user_id_" + id;
-        Object cache = redisUtil.get(key);
-        User res;
-        if (cache == null) {
-            System.out.println("getUserByID: not in redis " + "id: " + id);
-            res = userRepository.findUserById(id);
-            if (res != null)
-                redisUtil.set(key, JSONArray.toJSON(res));
-        } else {
-            System.out.println("getUserByID: in redis " + "id: " + id);
-            res = JSONArray.parseObject(cache.toString(), User.class);
-        }
-        return res;
+//        String key = "UserDao_user_id_" + id;
+//        Object cache = redisUtil.get(key);
+//        User res;
+//        if (cache == null) {
+//            System.out.println("getUserByID: not in redis " + "id: " + id);
+//            res = userRepository.findUserById(id);
+//            if (res != null)
+//                redisUtil.set(key, JSONArray.toJSON(res));
+//        } else {
+//            System.out.println("getUserByID: in redis " + "id: " + id);
+//            res = JSONArray.parseObject(cache.toString(), User.class);
+//        }
+//        return res;
+        return userRepository.findUserById(id);
     }
 
     public List<User> getUsers() {
-        Object cache = redisUtil.get(allUsersKey);
-        List<User> res = null;
-        if (cache == null) {
-            System.out.println("getUsers: not in redis");
-            res = userRepository.findAll();
-            redisUtil.set(allUsersKey, JSONArray.toJSON(res));
-        } else {
-            System.out.println("getUsers: in redis");
-            res = JSONArray.parseArray(cache.toString(), User.class);
-        }
-        return res;
+//        Object cache = redisUtil.get(allUsersKey);
+//        List<User> res = null;
+//        if (cache == null) {
+//            System.out.println("getUsers: not in redis");
+//            res = userRepository.findAll();
+//            redisUtil.set(allUsersKey, JSONArray.toJSON(res));
+//        } else {
+//            System.out.println("getUsers: in redis");
+//            res = JSONArray.parseArray(cache.toString(), User.class);
+//        }
+//        return res;
+        return userRepository.findAll();
     }
 
 }
