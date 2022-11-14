@@ -107,4 +107,9 @@ public class OrderController {
             @RequestParam(Constants.ENDALLORDERSTIME) String end) {
         return cartService.allOrdersByTime(start, end);
     }
+
+    @RequestMapping(value = "/sumPrice")
+    public Result<Integer> sumPrice(@RequestParam(Constants.ORDERID) Integer orderId) {
+        return cartService.sumPrice(orderId);
+    }
 }

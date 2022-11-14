@@ -31,24 +31,14 @@ public class OrderDaoImpl implements OrderDao {
     private String allOrdersKey = "OrderDao_allOrders";
 
     public List<Order> getAllOrders() {
-        Object cache = redisUtil.get(allOrdersKey);
-        List<Order> res = null;
-        if (cache == null) {
-            System.out.println("getAllOrders: not in redis");
-            res = orderRepository.findAll();
-            redisUtil.set(allOrdersKey, JSONArray.toJSON(res));
-        } else {
-            System.out.println("getAllOrders: in redis");
-            res = JSONArray.parseArray(cache.toString(), Order.class);
-        }
-        return res;
+        return orderRepository.findAll();
     }
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
     public void saveOrder(Order order) {
-        System.out.println("saveOrder: clean all orders cache in redis");
-        redisUtil.del(allOrdersKey);
+        //System.out.println("saveOrder: clean all orders cache in redis");
+        //redisUtil.del(allOrdersKey);
         orderRepository.saveAndFlush(order);
     }
 }

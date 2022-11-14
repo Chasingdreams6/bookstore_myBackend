@@ -5,11 +5,13 @@ import com.example.mybackend.dao.*;
 import com.example.mybackend.entity.*;
 import com.example.mybackend.service.OrderService;
 import com.example.mybackend.utility.Constants;
+import com.example.mybackend.utility.FunctionCall;
 import com.example.mybackend.utility.HibernateUtil;
 import org.hibernate.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.relational.core.sql.In;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +33,8 @@ public class OrderServiceImpl implements OrderService {
     private BookDao bookDao;
     @Autowired
     private UserDao userDao;
+    @Autowired
+    private FunctionCall functionCall;
 
     private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
     private Result<Cart> result = new Result<>();
@@ -38,6 +42,10 @@ public class OrderServiceImpl implements OrderService {
     private Result<List<CartItem>> cartResults = new Result<>();
     private Result<OrderItem> mResult = new Result<>();
     private Result<List<Order>> cResult = new Result<>();
+    private Result<Integer> sResult = new Result<>();
+    private void sRestart() {
+        sResult.setCode(-1);
+    }
     private void restart() {
         result.setCode(-1);
         result.setMsg("");
@@ -325,5 +333,24 @@ public class OrderServiceImpl implements OrderService {
         cResult.setMsg("success to fetch all orders by time");
         cResult.setDetail(res);
         return cResult;
+    }
+
+    public Result<Integer> sumPrice(Integer orderId) {
+        sResult.setCode(Constants.SUCCESS);
+        sResult.setMsg("Success to sum order price");
+        List<Order> orders = orderDao.getAllOrders();
+        int ans = 0;
+        for (Order order : orders) {
+            if (Objects.equals(order.getId(), orderId)) {
+                for (OrderItem item : order.getOrderItems()) {
+                    String marshalled = item.getBooknumber() + "," + item.getCurprice();
+                    ans = ans + functionCall.mul(marshalled);
+                    //ans = ans + item.getBooknumber() * item.getCurprice();
+                }
+            }
+        }
+        System.out.println("Success to RPC");
+        sResult.setDetail(ans);
+        return sResult;
     }
 }
