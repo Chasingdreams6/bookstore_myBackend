@@ -3,6 +3,8 @@ package com.example.mybackend.daoimpl;
 import com.alibaba.fastjson.JSONArray;
 import com.example.mybackend.dao.BookDao;
 import com.example.mybackend.entity.Book;
+import com.example.mybackend.entity.BookIcon;
+import com.example.mybackend.repository.BookIconRepository;
 import com.example.mybackend.utility.Constants;
 import com.example.mybackend.repository.BookRepository;
 import com.example.mybackend.utility.RedisUtil;
@@ -14,12 +16,17 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class BookDaoImpl implements BookDao {
 
     @Autowired
     private BookRepository bookRepository;
+
+    @Autowired
+    private BookIconRepository bookIconRepository;
+
     private static final Logger logger = LoggerFactory.getLogger(BookDao.class);
     private final String allBookKey = "BookDao_Books";
 
@@ -31,6 +38,11 @@ public class BookDaoImpl implements BookDao {
         if (res == null) {
             System.out.println("getBooks: not in redis");
             resBook = bookRepository.findBooks();
+            for (int i = 0; i < resBook.size(); ++i) {
+                Optional<BookIcon> image = bookIconRepository.findById(resBook.get(i).getId());
+                if (image.isPresent())
+                    resBook.get(i).setBookIcon(image.get());
+            }
             redisUtil.set(allBookKey, JSONArray.toJSON(resBook));
         } else {
             System.out.println("getBooks: in redis");
@@ -46,6 +58,7 @@ public class BookDaoImpl implements BookDao {
         if (cache == null) {
             System.out.println("findBookByISBN: not in redis " + "isbn: " + isbn);
             res = bookRepository.findBookById(isbn);
+            res.setBookIcon(bookIconRepository.findById(res.getId()).get());
             if (res != null)
                 redisUtil.set(key, JSONArray.toJSON(res));
         }  else {
@@ -63,6 +76,7 @@ public class BookDaoImpl implements BookDao {
         redisUtil.set(key, JSONArray.toJSON(book));
         redisUtil.del(allBookKey);
         bookRepository.saveAndFlush(book);
+        bookIconRepository.save(book.getBookIcon());
         return Constants.SUCCESS;
     }
 
@@ -73,6 +87,7 @@ public class BookDaoImpl implements BookDao {
         redisUtil.del(key);
         redisUtil.del(allBookKey);
         bookRepository.deleteById(isbn);
+        bookIconRepository.deleteById(isbn);
         return Constants.SUCCESS;
     }
 
@@ -83,6 +98,7 @@ public class BookDaoImpl implements BookDao {
         redisUtil.set(key, JSONArray.toJSON(key));
         redisUtil.del(allBookKey);
         bookRepository.saveAndFlush(book);
+        bookIconRepository.save(book.getBookIcon());
         return Constants.SUCCESS;
     }
 }

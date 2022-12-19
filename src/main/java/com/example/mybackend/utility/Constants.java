@@ -53,4 +53,5 @@ public class Constants {
     public static final String ENDORDERTIME = "endordertime";
 
     public static final String ORDERID = "orderid";
+    public static final String BASE64_PREFIX = "data:image/png;base64,";
 }

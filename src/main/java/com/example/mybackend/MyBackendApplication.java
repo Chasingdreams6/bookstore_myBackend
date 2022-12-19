@@ -10,10 +10,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 import javax.websocket.server.ServerEndpointConfig;
 
 @SpringBootApplication
+//@EnableMongoRepositories(basePackages = "com.example.mybackend.repository")
 public class MyBackendApplication {
 
     @Bean

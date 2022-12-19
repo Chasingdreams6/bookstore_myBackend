@@ -5,6 +5,7 @@ import com.example.mybackend.utility.BookForSolr;
 import com.example.mybackend.utility.Constants;
 import com.example.mybackend.entity.Result;
 import com.example.mybackend.service.BookService;
+import com.example.mybackend.utility.InitMongo;
 import com.example.mybackend.utility.Solr;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,10 +22,16 @@ public class BookController {
     private BookService bookService;
     @Autowired
     private Solr solr;
+    @Autowired
+    private InitMongo initMongo;
 
     @RequestMapping(value = "/initSolr")
     public void initSolr() throws SolrServerException, IOException {
         solr.initSolr();
+    }
+    @RequestMapping(value = "/initMongo")
+    public void initMongo() {
+        initMongo.initMongo();
     }
 
     @RequestMapping(value = "/fulltextSearch")
