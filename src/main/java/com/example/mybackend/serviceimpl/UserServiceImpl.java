@@ -2,17 +2,19 @@ package com.example.mybackend.serviceimpl;
 
 
 import com.example.mybackend.dao.UserDao;
+import com.example.mybackend.entity.*;
 import com.example.mybackend.utility.Constants;
-import com.example.mybackend.entity.MostCostUser;
-import com.example.mybackend.entity.Result;
-import com.example.mybackend.entity.User;
 import com.example.mybackend.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -20,6 +22,10 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
     @Autowired
     UserDao userDao; //
+
+    @Autowired
+    private WebApplicationContext webApplicationContext;
+
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private Result<User> mResult = new Result<>();
     private Result<List<User>> result = new Result<>();
@@ -92,6 +98,15 @@ public class UserServiceImpl implements UserService {
         return mResult;
     }
 
+    public Result<String> logout(User user) {
+        User selectUser = userDao.SearchByName(user.getUsername());
+        if (selectUser != null) {
+            TimerServiceImpl timerService = webApplicationContext.getBean(TimerServiceImpl.class);
+            return timerService.getTime();
+        }
+        return new Result<>(Constants.FAIL, "username not found", "");
+    }
+
     public Result<User> update(User user) {
         restart();
         int res = userDao.update(user);
@@ -123,7 +138,27 @@ public class UserServiceImpl implements UserService {
     }
 
     public Result<User> mostCostUser() {
-        User user = userDao.mostCostUser();
+        User user;
+        List<User> users = userDao.getUsers();
+        if (users == null) user = null;
+        else {
+            int maxCost = 0, id = 0;
+            for (int i = 0, size = users.size(); i < size; ++i) {
+                User tmp = users.get(i);
+                int curCost = 0;
+                for (Order order : tmp.getOrders()) {
+                    for (OrderItem item : order.getOrderItems()) {
+                        curCost += item.getBooknumber() * item.getCurprice();
+                    }
+                }
+                //System.out.println(curCost);
+                if (maxCost > curCost) {
+                    id = i;
+                    maxCost = curCost;
+                }
+            }
+            user = users.get(id);
+        }
         if (user != null) {
             mResult.setDetail(user);
             mResult.setCode(Constants.SUCCESS);
@@ -151,9 +186,23 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Result<List<MostCostUser>> usersSortedByCost(String start, String end) {
-        List<MostCostUser> users = userDao.usersSortedByCost(start, end);
-        if (users != null) {
-            result2.setDetail(users);
+        List<User> users = userDao.getUsers();
+        List<MostCostUser> res = new ArrayList<>();
+        for (User user : users) {
+            if (user.getValid() == 0 || user.getValid() == 1)
+                res.add(new MostCostUser(user.getUsername(), user.getCostByTime(start, end)));
+        }
+        res.sort(new Comparator<MostCostUser>() {
+            public int compare(MostCostUser o1, MostCostUser o2) {
+                return o2.getCost().compareTo(o1.getCost());
+            }
+        });
+        for (MostCostUser user : res) {
+            System.out.println(user.getName() + " " + user.getCost());
+        }
+
+        if (res != null) {
+            result2.setDetail(res);
             result2.setCode(Constants.SUCCESS);
             result2.setMsg("users sorted by cost");
         }

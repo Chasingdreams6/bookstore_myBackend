@@ -16,4 +16,5 @@ public interface OrderService {
     public Result<List<Order>> getOrdersByTime(Integer userid, String start, String end);
     public Result<List<PopularBook>> popularBooks(String start, String end);
     public Result<List<Order>> allOrdersByTime(String start, String end);
+    public Result<Integer> sumPrice(Integer orderId);
 }

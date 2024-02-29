@@ -18,4 +18,5 @@ public interface CartDao {
     public List<CartItem> getCarts(Integer userid);
 
     public Cart findCartByCartID(Integer cartid);
+    public void saveCart(Cart cart);
 }

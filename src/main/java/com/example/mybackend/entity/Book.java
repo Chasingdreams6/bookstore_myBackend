@@ -4,10 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "books")
@@ -37,6 +34,9 @@ public class Book {
 
     @Column(name = "bookgraphuri", length = 50)
     private String bookgraphuri;
+
+    @Transient
+    private BookIcon bookIcon;
 
     public Book() {}
 
@@ -106,6 +106,9 @@ public class Book {
     public void setBookgraphuri(String bookgraphuri) {
         this.bookgraphuri = bookgraphuri;
     }
+
+    public void setBookIcon(BookIcon icon) {this.bookIcon = icon;}
+    public BookIcon getBookIcon() {return this.bookIcon;}
 
     public String toString() {
         return String.format("book[bookisbn=%s, bookprice=%d, bookname=%s]\n",

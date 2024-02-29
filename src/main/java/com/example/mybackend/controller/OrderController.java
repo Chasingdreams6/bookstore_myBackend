@@ -3,9 +3,12 @@ package com.example.mybackend.controller;
 import com.example.mybackend.entity.*;
 import com.example.mybackend.service.OrderService;
 import com.example.mybackend.utility.Constants;
+import com.example.mybackend.utility.OrderItemSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +16,12 @@ import java.util.Map;
 public class OrderController {
     @Autowired
     private OrderService cartService;
+
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
+
+    @Autowired
+    HttpServletRequest request;
 
     @RequestMapping("createCart")
     public Result<Cart> createCart(@RequestParam(Constants.USERID) Integer userid) {
@@ -39,16 +48,16 @@ public class OrderController {
     * @effect: buy all books in his cart
     * */
     @RequestMapping("/buyBooks")
-    public Result<Cart> doBuy(@RequestBody Map<String, String> params) {
-        return cartService.buyBooks(Integer.parseInt(params.get(Constants.USERID)));
+    public void doBuy(@RequestBody Map<String, String> params) {
+        kafkaTemplate.send("buyAllTopic", "key", params.get(Constants.USERID));
     }
 
     @RequestMapping("/buyBook")
-    public Result<OrderItem> buyOne(@RequestBody Map<String, String> params) {
-        return cartService.buyBookByISBN(
-                params.get(Constants.ISBN),
-                Integer.parseInt(params.get(Constants.USERID)),
-                Integer.parseInt(params.get(Constants.NUMBER)));
+    public void buyOne(@RequestBody Map<String, String> params) {
+        String message = (String) params.get(Constants.ISBN) + ","
+                + (String) params.get(Constants.USERID) + ","
+                + (String) params.get(Constants.NUMBER);
+        kafkaTemplate.send("buyTopic", "key", message);
     }
 
     @RequestMapping("/getCarts")
@@ -97,5 +106,10 @@ public class OrderController {
             @RequestParam(Constants.STARTALLORDERSTIME) String start,
             @RequestParam(Constants.ENDALLORDERSTIME) String end) {
         return cartService.allOrdersByTime(start, end);
+    }
+
+    @RequestMapping(value = "/sumPrice")
+    public Result<Integer> sumPrice(@RequestParam(Constants.ORDERID) Integer orderId) {
+        return cartService.sumPrice(orderId);
     }
 }

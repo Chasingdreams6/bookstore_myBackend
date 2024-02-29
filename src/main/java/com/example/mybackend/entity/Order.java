@@ -25,11 +25,11 @@ public class Order {
     @Column(name = "orderdate", nullable = false)
     private Date date;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST) // 新增order直接级联改变user
     @JoinColumn(name = "userid")
     private User user;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.REMOVE, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.REMOVE, fetch = FetchType.EAGER) // 删除order连带删除orderItem
     private Set<OrderItem> orderItems = new LinkedHashSet<>();
 
     public Integer getId() {

@@ -70,4 +70,9 @@ public class OrderItem {
     public void setBookisbn(String bookisbn) {
         this.bookisbn = bookisbn;
     }
+
+    @Override
+    public String toString() {
+        return id + "," + booknumber + "," + bookisbn + "," + curprice;
+    }
 }
